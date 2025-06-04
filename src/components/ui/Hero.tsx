@@ -26,10 +26,7 @@ export default function Hero() {
   };
 
   const handleEmailClick = () => {
-    window.open(
-      'mailto:maria@traducoesprofissionais.com?subject=Solicitação de Orçamento',
-      '_blank'
-    );
+    window.open('mailto:luanicole@gmail.com?subject=Solicitação de Orçamento', '_blank');
   };
 
   interface ScrollToSectionFn {

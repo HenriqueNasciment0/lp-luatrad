@@ -112,7 +112,7 @@ export default function Header() {
 
         <div
           className={`lg:hidden overflow-hidden transition-all duration-300 ${
-            isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
           <div className="bg-white/95 backdrop-blur-md shadow-lg border-t border-gray-200 rounded-b-2xl mx-4 mb-4">

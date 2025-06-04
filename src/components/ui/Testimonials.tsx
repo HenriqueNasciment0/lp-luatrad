@@ -141,7 +141,7 @@ export default function Testimonials() {
           <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 lg:p-12 border border-white/20 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-60"></div>
 
-            <div className="absolute -top-6 left-8 z-20">
+            <div className="absolute left-8 z-20">
               <div
                 className={`w-12 h-12 bg-gradient-to-r ${testimonials[currentIndex].color} rounded-full flex items-center justify-center shadow-lg`}
               >
