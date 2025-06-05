@@ -22,6 +22,7 @@ export default function Header() {
     { label: 'Diferenciais', href: 'differentials' },
     { label: 'Depoimentos', href: 'testimonials' },
     { label: 'Processo', href: 'process' },
+    { label: 'Orçamento', href: 'quote-form' },
     { label: 'FAQ', href: 'faq' },
   ];
 

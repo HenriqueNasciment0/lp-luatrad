@@ -12,6 +12,7 @@ import CTAFinal from '@/components/ui/CTAFinal';
 import Footer from '@/components/ui/Footer';
 import WhatsAppButton from '@/components/shared/WhatsAppButton';
 import ScrollToTop from '@/components/shared/ScrollToTop';
+import QuoteForm from '@/components/ui/QuoteForm';
 
 export default function Home() {
   return (
@@ -25,6 +26,7 @@ export default function Home() {
       <Process />
       <FAQ />
       <CTAFinal />
+      <QuoteForm />
       <Footer />
 
       <WhatsAppButton />

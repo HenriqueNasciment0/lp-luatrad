@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar, Globe, Users, Rocket, Award, Heart } from 'lucide-react';
+import Image from 'next/image';
 
 export default function About() {
   const timeline = [
@@ -94,9 +95,13 @@ export default function About() {
               <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl shadow-2xl overflow-hidden border-4 border-white/50">
                 <div className="w-full h-full bg-gradient-to-br from-blue-200/60 to-purple-200/60 flex items-center justify-center relative">
                   <div className="text-center text-blue-700">
-                    <Users className="w-16 h-16 mx-auto mb-4" />
-                    <p className="font-semibold text-lg">Lua Abreu</p>
-                    <p className="text-sm opacity-80">Tradutora Profissional</p>
+                    <Image
+                      src="/2.jpeg"
+                      alt="Foto de Luana Abreu"
+                      width={350}
+                      height={350}
+                      className="rounded-3xl object-cover"
+                    />
                   </div>
 
                   <div className="absolute top-4 right-4 w-8 h-8 bg-white/30 rounded-full"></div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowRight, MessageCircle, Mail, Globe, Star } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Hero() {
   const [currentText, setCurrentText] = useState(0);
@@ -124,13 +125,13 @@ export default function Hero() {
             <div className="relative z-10 max-w-md w-full">
               {/* Photo Placeholder */}
               <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden relative">
-                <div className="w-full h-full bg-gradient-to-br from-blue-200/50 to-purple-200/50 flex items-center justify-center">
-                  <div className="text-center text-blue-700">
-                    <Globe className="w-16 h-16 mx-auto mb-4" />
-                    <p className="font-semibold text-lg">Lua Abreu</p>
-                    <p className="text-sm opacity-75">Foto Profissional</p>
-                  </div>
-                </div>
+                <Image
+                  src="/1.jpeg"
+                  alt="Foto de Luana Abreu"
+                  width={350}
+                  height={350}
+                  className="rounded-3xl object-cover"
+                />
               </div>
 
               <div className="absolute -top-6 -right-6 bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-xl animate-bounce">
