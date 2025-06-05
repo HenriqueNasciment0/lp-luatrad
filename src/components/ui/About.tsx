@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, Globe, Users, Rocket, Award, Heart } from 'lucide-react';
+import { Calendar, Globe, Rocket, Award, Heart } from 'lucide-react';
 import Image from 'next/image';
 
 export default function About() {

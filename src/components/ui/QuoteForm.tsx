@@ -1,21 +1,33 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, Globe, Clock, User, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  FileText,
+  Languages,
+  Calendar,
+  User,
+  Mail,
+  Phone,
+  MessageSquare,
+  Send,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  DollarSign,
+} from 'lucide-react';
 
-export default function QuoteForm() {
+export default function QuoteRequestForm() {
+  const GOOGLE_SCRIPT_URL = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL || '';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     company: '',
-    serviceType: '',
-    sourceLanguage: '',
-    targetLanguage: '',
+    translationDirection: '',
     documentType: '',
     wordCount: '',
     deadline: '',
-    urgency: '',
+    urgency: 'normal',
     additionalInfo: '',
     budget: '',
   });
@@ -24,113 +36,99 @@ export default function QuoteForm() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const serviceTypes = [
-    { value: 'document-translation', label: 'Tradução de Documentos' },
-    { value: 'website-translation', label: 'Tradução de Website' },
-    { value: 'marketing-translation', label: 'Tradução de Material de Marketing' },
-    { value: 'academic-translation', label: 'Tradução Acadêmica' },
-    { value: 'technical-translation', label: 'Tradução Técnica' },
-    { value: 'simultaneous-interpretation', label: 'Interpretação Simultânea' },
-    { value: 'subtitle-translation', label: 'Tradução de Legendas' },
-    { value: 'other', label: 'Outro' },
+  const translationOptions = [
+    { value: 'en-pt', label: 'Inglês → Português' },
+    { value: 'pt-en', label: 'Português → Inglês' },
+    { value: 'both', label: 'Ambos os sentidos' },
   ];
 
   const documentTypes = [
-    { value: 'contract', label: 'Contratos' },
-    { value: 'certificate', label: 'Certidões/Certificados' },
-    { value: 'manual', label: 'Manuais Técnicos' },
-    { value: 'website', label: 'Conteúdo Web' },
-    { value: 'marketing', label: 'Material Publicitário' },
-    { value: 'academic', label: 'Artigos Acadêmicos' },
-    { value: 'legal', label: 'Documentos Jurídicos' },
-    { value: 'medical', label: 'Documentos Médicos' },
-    { value: 'other', label: 'Outro' },
+    'Documentos Acadêmicos',
+    'Materiais Corporativos',
+    'Contratos Jurídicos',
+    'Websites/E-commerce',
+    'Marketing/Publicidade',
+    'Manuais Técnicos',
+    'Legendas/Vídeos',
+    'Livros/Literatura',
+    'Outros',
   ];
 
-  const urgencyLevels = [
-    { value: 'standard', label: 'Padrão (5-7 dias)', icon: Clock },
-    { value: 'express', label: 'Expresso (2-3 dias)', icon: Clock },
-    { value: 'urgent', label: 'Urgente (24-48h)', icon: AlertCircle },
+  const urgencyOptions = [
+    { value: 'normal', label: 'Normal (7-10 dias)', color: 'text-green-600' },
+    { value: 'urgent', label: 'Urgente (3-5 dias)', color: 'text-yellow-600' },
+    { value: 'express', label: 'Express (24-48h)', color: 'text-red-600' },
   ];
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const validateForm = (): boolean => {
+  const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
     if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email inválido';
-
-    if (!formData.phone.trim()) newErrors.phone = 'Telefone é obrigatório';
-    if (!formData.serviceType) newErrors.serviceType = 'Tipo de serviço é obrigatório';
-    if (!formData.sourceLanguage) newErrors.sourceLanguage = 'Idioma de origem é obrigatório';
-    if (!formData.targetLanguage) newErrors.targetLanguage = 'Idioma de destino é obrigatório';
-    if (!formData.documentType) newErrors.documentType = 'Tipo de documento é obrigatório';
-    if (!formData.urgency) newErrors.urgency = 'Prazo é obrigatório';
+    if (!formData.translationDirection)
+      newErrors.translationDirection = 'Selecione a direção da tradução';
+    if (!formData.documentType) newErrors.documentType = 'Selecione o tipo de documento';
+    if (!formData.wordCount.trim()) newErrors.wordCount = 'Número de palavras é obrigatório';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
 
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
+  const submitToGoogleSheets = async (data: typeof formData) => {
+    if (!GOOGLE_SCRIPT_URL) {
+      console.error('URL do Google Script não configurada!');
+      return { ok: false };
+    }
 
     try {
-      // Simulating API call to Google Sheets
-      // In a real implementation, you would integrate with Google Sheets API
-      // or use a service like Zapier, Make.com, or a custom backend
-
-      const response = await fetch('/api/submit-quote', {
+      await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          submittedAt: new Date().toISOString(),
-          timestamp: Date.now(),
-        }),
+        body: JSON.stringify(data),
       });
 
-      if (response.ok) {
-        setSubmitStatus('success');
-        // Reset form
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          company: '',
-          serviceType: '',
-          sourceLanguage: '',
-          targetLanguage: '',
-          documentType: '',
-          wordCount: '',
-          deadline: '',
-          urgency: '',
-          additionalInfo: '',
-          budget: '',
-        });
-      } else {
-        throw new Error('Erro ao enviar formulário');
-      }
+      return { ok: true };
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Erro ao enviar:', error);
+      return { ok: false };
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      await submitToGoogleSheets(formData);
+
+      setSubmitStatus('success');
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        translationDirection: '',
+        documentType: '',
+        wordCount: '',
+        deadline: '',
+        urgency: 'normal',
+        additionalInfo: '',
+        budget: '',
+      });
+    } catch (error) {
+      console.log(error);
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -153,28 +151,17 @@ export default function QuoteForm() {
               </div>
 
               <h2 className="font-bold text-3xl text-gray-800 mb-4">
-                Orçamento Enviado com Sucesso!
+                Solicitação Enviada com Sucesso!
               </h2>
 
-              <p className="text-lg text-gray-600 mb-8">
-                Obrigada pelo seu interesse! Analisarei sua solicitação e entrarei em contato em até
-                24 horas com uma proposta personalizada.
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                Recebi sua solicitação de orçamento e entrarei em contato em até 24 horas com uma
+                proposta personalizada para seu projeto.
               </p>
-
-              <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6 border border-blue-100">
-                <p className="text-sm text-gray-700 mb-2">
-                  <strong>Próximos passos:</strong>
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1 text-left">
-                  <li>• Análise detalhada do seu projeto</li>
-                  <li>• Cálculo personalizado do orçamento</li>
-                  <li>• Contato via WhatsApp ou email</li>
-                </ul>
-              </div>
 
               <button
                 onClick={() => setSubmitStatus('idle')}
-                className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
               >
                 Fazer Nova Solicitação
               </button>
@@ -201,338 +188,305 @@ export default function QuoteForm() {
           <div className="space-y-6">
             <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-full border border-blue-100">
               <FileText className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-700">Solicitar Orçamento</span>
+              <span className="text-sm font-medium text-blue-700">Orçamento Gratuito</span>
             </div>
 
             <h2 className="font-bold text-4xl lg:text-5xl text-gray-800 leading-tight">
-              Precisa de{' '}
+              Solicite seu{' '}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                tradução profissional?
+                orçamento personalizado
               </span>
             </h2>
 
             <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mx-auto"></div>
 
             <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
-              Preencha o formulário abaixo e receba um orçamento personalizado em até 24 horas
+              Preencha o formulário abaixo e receba uma proposta detalhada em até 24 horas
             </p>
           </div>
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <Globe className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold">Formulário de Orçamento</h3>
-                  <p className="text-blue-100">Conte-nos sobre seu projeto de tradução</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-8 lg:p-12 space-y-8">
-              {/* Informações Pessoais */}
-              <div className="space-y-6">
-                <h4 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
-                  <User className="w-5 h-5 text-blue-600" />
-                  <span>Informações de Contato</span>
-                </h4>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nome Completo *
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        errors.name ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Seu nome completo"
-                    />
-                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        errors.email ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="seu@email.com"
-                    />
-                    {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Telefone/WhatsApp *
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        errors.phone ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="(85) 99999-9999"
-                    />
-                    {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Empresa (opcional)
-                    </label>
-                    <input
-                      type="text"
-                      name="company"
-                      value={formData.company}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Nome da empresa"
-                    />
-                  </div>
-                </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 lg:p-12 border border-white/20">
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              {/* Nome */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <User className="w-4 h-4" />
+                  <span>Nome Completo *</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700 ${
+                    errors.name
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 focus:border-blue-400'
+                  }`}
+                  placeholder="Seu nome completo"
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-sm flex items-center space-x-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.name}</span>
+                  </p>
+                )}
               </div>
 
-              {/* Detalhes do Serviço */}
-              <div className="space-y-6">
-                <h4 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
-                  <Globe className="w-5 h-5 text-blue-600" />
-                  <span>Detalhes do Projeto</span>
-                </h4>
+              {/* Email */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <Mail className="w-4 h-4" />
+                  <span>Email *</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700 ${
+                    errors.email
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 focus:border-blue-400'
+                  }`}
+                  placeholder="seu@email.com"
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-sm flex items-center space-x-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.email}</span>
+                  </p>
+                )}
+              </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Serviço *
-                    </label>
-                    <select
-                      name="serviceType"
-                      value={formData.serviceType}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        errors.serviceType ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Selecione o tipo de serviço</option>
-                      {serviceTypes.map((service) => (
-                        <option key={service.value} value={service.value}>
-                          {service.label}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.serviceType && (
-                      <p className="text-red-500 text-sm mt-1">{errors.serviceType}</p>
-                    )}
-                  </div>
+              {/* Telefone */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <Phone className="w-4 h-4" />
+                  <span>Telefone</span>
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700"
+                  placeholder="(85) 99999-9999"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Documento *
-                    </label>
-                    <select
-                      name="documentType"
-                      value={formData.documentType}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        errors.documentType ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Selecione o tipo de documento</option>
-                      {documentTypes.map((doc) => (
-                        <option key={doc.value} value={doc.value}>
-                          {doc.label}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.documentType && (
-                      <p className="text-red-500 text-sm mt-1">{errors.documentType}</p>
-                    )}
-                  </div>
+              {/* Empresa */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <FileText className="w-4 h-4" />
+                  <span>Empresa/Instituição</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => handleInputChange('company', e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700"
+                  placeholder="Nome da empresa (opcional)"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Idioma de Origem *
-                    </label>
-                    <select
-                      name="sourceLanguage"
-                      value={formData.sourceLanguage}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        errors.sourceLanguage ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Selecione o idioma</option>
-                      <option value="portuguese">Português</option>
-                      <option value="english">Inglês</option>
-                    </select>
-                    {errors.sourceLanguage && (
-                      <p className="text-red-500 text-sm mt-1">{errors.sourceLanguage}</p>
-                    )}
-                  </div>
+              {/* Direção da Tradução */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <Languages className="w-4 h-4" />
+                  <span>Direção da Tradução *</span>
+                </label>
+                <select
+                  value={formData.translationDirection}
+                  onChange={(e) => handleInputChange('translationDirection', e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700 ${
+                    errors.translationDirection
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 focus:border-blue-400'
+                  }`}
+                >
+                  <option value="">Selecione a direção</option>
+                  {translationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.translationDirection && (
+                  <p className="text-red-500 text-sm flex items-center space-x-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.translationDirection}</span>
+                  </p>
+                )}
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Idioma de Destino *
-                    </label>
-                    <select
-                      name="targetLanguage"
-                      value={formData.targetLanguage}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        errors.targetLanguage ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Selecione o idioma</option>
-                      <option value="portuguese">Português</option>
-                      <option value="english">Inglês</option>
-                    </select>
-                    {errors.targetLanguage && (
-                      <p className="text-red-500 text-sm mt-1">{errors.targetLanguage}</p>
-                    )}
-                  </div>
+              {/* Tipo de Documento */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <FileText className="w-4 h-4" />
+                  <span>Tipo de Documento *</span>
+                </label>
+                <select
+                  value={formData.documentType}
+                  onChange={(e) => handleInputChange('documentType', e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700 ${
+                    errors.documentType
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 focus:border-blue-400'
+                  }`}
+                >
+                  <option value="">Selecione o tipo</option>
+                  {documentTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+                {errors.documentType && (
+                  <p className="text-red-500 text-sm flex items-center space-x-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.documentType}</span>
+                  </p>
+                )}
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Número de Palavras (estimativa)
-                    </label>
-                    <input
-                      type="text"
-                      name="wordCount"
-                      value={formData.wordCount}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Ex: 1000 palavras"
-                    />
-                  </div>
+              {/* Número de Palavras */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <FileText className="w-4 h-4" />
+                  <span>Número de Palavras *</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.wordCount}
+                  onChange={(e) => handleInputChange('wordCount', e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700 ${
+                    errors.wordCount
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 focus:border-blue-400'
+                  }`}
+                  placeholder="Ex: 5000 palavras ou páginas"
+                />
+                {errors.wordCount && (
+                  <p className="text-red-500 text-sm flex items-center space-x-1">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.wordCount}</span>
+                  </p>
+                )}
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data Desejada de Entrega
-                    </label>
-                    <input
-                      type="date"
-                      name="deadline"
-                      value={formData.deadline}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    />
-                  </div>
-                </div>
+              {/* Prazo */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <Calendar className="w-4 h-4" />
+                  <span>Prazo Desejado</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => handleInputChange('deadline', e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700"
+                />
+              </div>
 
-                {/* Urgência */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-4">
-                    Prazo de Entrega *
-                  </label>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {urgencyLevels.map((level) => (
-                      <label
-                        key={level.value}
-                        className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                          formData.urgency === level.value
-                            ? 'border-blue-500 bg-blue-50'
+              {/* Urgência */}
+              <div className="space-y-2 md:col-span-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700 mb-3">
+                  <Clock className="w-4 h-4" />
+                  <span>Nível de Urgência</span>
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {urgencyOptions.map((option) => (
+                    <label key={option.value} className="cursor-pointer">
+                      <input
+                        type="radio"
+                        name="urgency"
+                        value={option.value}
+                        checked={formData.urgency === option.value}
+                        onChange={(e) => handleInputChange('urgency', e.target.value)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                          formData.urgency === option.value
+                            ? 'border-blue-400 bg-blue-50'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
-                        <input
-                          type="radio"
-                          name="urgency"
-                          value={level.value}
-                          checked={formData.urgency === level.value}
-                          onChange={handleInputChange}
-                          className="sr-only"
-                        />
-                        <level.icon className="w-5 h-5 mr-3 text-blue-600" />
-                        <span className="font-medium text-gray-800">{level.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.urgency && <p className="text-red-500 text-sm mt-2">{errors.urgency}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Orçamento Estimado (opcional)
-                  </label>
-                  <select
-                    name="budget"
-                    value={formData.budget}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  >
-                    <option value="">Selecione uma faixa</option>
-                    <option value="under-500">Até R$ 500</option>
-                    <option value="500-1000">R$ 500 - R$ 1.000</option>
-                    <option value="1000-2500">R$ 1.000 - R$ 2.500</option>
-                    <option value="2500-5000">R$ 2.500 - R$ 5.000</option>
-                    <option value="over-5000">Acima de R$ 5.000</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Informações Adicionais
-                  </label>
-                  <textarea
-                    name="additionalInfo"
-                    value={formData.additionalInfo}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                    placeholder="Conte-nos mais sobre seu projeto, especificações técnicas, contexto, ou qualquer informação que possa ajudar no orçamento..."
-                  />
+                        <div className={`text-sm font-medium ${option.color}`}>{option.label}</div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
               </div>
 
-              {submitStatus === 'error' && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center space-x-3">
-                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                  <p className="text-red-700">
-                    Houve um erro ao enviar o formulário. Tente novamente ou entre em contato via
-                    WhatsApp.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100 transition-all duration-200 flex items-center justify-center space-x-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Enviando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span>Solicitar Orçamento</span>
-                    </>
-                  )}
-                </button>
-
-                <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Resposta garantida em 24h</span>
-                </div>
+              {/* Orçamento */}
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <DollarSign className="w-4 h-4" />
+                  <span>Orçamento Estimado</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.budget}
+                  onChange={(e) => handleInputChange('budget', e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700"
+                  placeholder="R$ (opcional)"
+                />
               </div>
             </div>
+
+            {/* Informações Adicionais */}
+            <div className="space-y-2 mb-8">
+              <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                <MessageSquare className="w-4 h-4" />
+                <span>Informações Adicionais</span>
+              </label>
+              <textarea
+                value={formData.additionalInfo}
+                onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none text-gray-700"
+                placeholder="Descreva detalhes específicos do projeto, área de especialização, requisitos especiais, etc."
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-12 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none transition-all duration-200 flex items-center space-x-3 mx-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Solicitar Orçamento Gratuito</span>
+                  </>
+                )}
+              </button>
+
+              <p className="text-sm text-gray-500 mt-4">
+                Resposta garantida em até 24 horas • Orçamento sem compromisso
+              </p>
+            </div>
+
+            {submitStatus === 'error' && (
+              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <div className="flex items-center space-x-2 text-red-600">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="font-medium">Erro ao enviar solicitação</span>
+                </div>
+                <p className="text-red-600 text-sm mt-1">
+                  Tente novamente ou entre em contato pelo WhatsApp.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -26,10 +26,6 @@ export default function Hero() {
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
-  const handleEmailClick = () => {
-    window.open('mailto:luanicole@gmail.com?subject=Solicitação de Orçamento', '_blank');
-  };
-
   interface ScrollToSectionFn {
     (sectionId: string): void;
   }
@@ -104,7 +100,7 @@ export default function Hero() {
               </button>
 
               <button
-                onClick={handleEmailClick}
+                onClick={() => scrollToSection('quote-form')}
                 className="bg-white hover:bg-gray-50 text-gray-800 font-semibold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl border-2 border-gray-200 hover:border-gray-300 transform hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2 text-lg"
               >
                 <Mail className="w-5 h-5" />
